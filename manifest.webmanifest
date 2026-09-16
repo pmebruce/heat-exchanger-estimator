@@ -1,0 +1,26 @@
+{
+  "name": "熱交換器快速估算",
+  "short_name": "HX 估算",
+  "description": "依熱負載、風量、鰭片與核心尺寸快速估算氣液式熱交換器溫度。",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#06111b",
+  "theme_color": "#07131f",
+  "icons": [
+    {
+      "src": "./hx-icon-v4-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./hx-icon-v4-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

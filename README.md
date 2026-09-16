@@ -1,1 +1,3 @@
-# heat-exchanger-estimator
+# 熱交換器快速估算器
+
+簡易氣液式熱交換器估算 PWA，可離線安裝使用。

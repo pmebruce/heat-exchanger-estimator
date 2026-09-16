@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07131f" />
+    <meta name="description" content="依熱負載、風量、鰭片與核心尺寸，快速估算氣液式熱交換器所需入口液溫與出口溫度。" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="HX 估算" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./hx-favicon-v4.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./hx-icon-v4-192.png" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>熱交換器快速估算</title>
+  </head>
+  <body>
+    <div class="page-glow page-glow--blue" aria-hidden="true"></div>
+    <div class="page-glow page-glow--orange" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="熱交換器快速估算首頁">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40" role="img">
+            <path d="M8 10h9v20H8zM23 10h9v20h-9z" />
+            <path d="M4 15h7M4 25h7M29 15h7M29 25h7" />
+            <path d="M17 14h6M17 20h6M17 26h6" />
+          </svg>
+        </span>
+        <span>
+          <strong>HX Quick Estimate</strong>
+          <small>熱交換器快速估算</small>
+        </span>
+      </a>
+      <div class="topbar-actions">
+        <span class="offline-badge" title="計算在裝置端完成">
+          <span class="status-dot"></span>
+          可離線使用
+        </span>
+        <button class="button button--quiet" id="installButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 19h14" /></svg>
+          安裝 App
+        </button>
+      </div>
+    </header>
+
+    <main id="top" class="workspace">
+      <section class="panel input-panel" aria-labelledby="inputTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">INPUT</p>
+            <h1 id="inputTitle">設計條件</h1>
+          </div>
+          <button class="text-button" id="resetButton" type="button">恢復範例</button>
+        </div>
+
+        <form id="calculatorForm" novalidate>
+          <fieldset>
+            <legend>熱負載與氣側</legend>
+            <div class="field-grid field-grid--two">
+              <label class="field field--accent">
+                <span>熱負載 <b>P</b></span>
+                <span class="input-wrap"><input id="power" name="power" type="number" value="900" min="1" step="10" inputmode="decimal" /><em>W</em></span>
+              </label>
+              <label class="field">
+                <span>風扇風量 <b>Q</b></span>
+                <span class="input-wrap"><input id="airflow" name="airflow" type="number" value="180" min="0.1" step="1" inputmode="decimal" /><em>CFM</em></span>
+              </label>
+              <label class="field">
+                <span>空氣入口溫度</span>
+                <span class="input-wrap"><input id="airInlet" name="airInlet" type="number" value="25" min="-40" max="100" step="0.5" inputmode="decimal" /><em>°C</em></span>
+              </label>
+              <label class="field">
+                <span>核心開口率</span>
+                <span class="input-wrap"><input id="openingRatio" name="openingRatio" type="number" value="0.5" min="0.05" max="1" step="0.05" inputmode="decimal" /><em>0–1</em></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>核心尺寸與鰭片</legend>
+            <div class="dimension-row" aria-label="熱交換器尺寸">
+              <label class="field">
+                <span>長 <b>L</b></span>
+                <span class="input-wrap"><input id="length" name="length" type="number" value="462.5" min="1" step="0.5" inputmode="decimal" /><em>mm</em></span>
+              </label>
+              <span class="dimension-x" aria-hidden="true">×</span>
+              <label class="field">
+                <span>寬 <b>W</b></span>
+                <span class="input-wrap"><input id="width" name="width" type="number" value="140" min="1" step="0.5" inputmode="decimal" /><em>mm</em></span>
+              </label>
+              <span class="dimension-x" aria-hidden="true">×</span>
+              <label class="field">
+                <span>厚 <b>T</b></span>
+                <span class="input-wrap"><input id="thickness" name="thickness" type="number" value="56" min="1" step="0.5" inputmode="decimal" /><em>mm</em></span>
+              </label>
+            </div>
+            <label class="field field--full">
+              <span>鰭片密度</span>
+              <span class="input-wrap"><input id="fpi" name="fpi" type="number" value="13" min="1" max="40" step="0.5" inputmode="decimal" /><em>FPI</em></span>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>液側</legend>
+            <div class="field-grid field-grid--two">
+              <label class="field">
+                <span>冷卻液</span>
+                <span class="select-wrap">
+                  <select id="fluid" name="fluid">
+                    <option value="water">水</option>
+                    <option value="eg50">EG 50%</option>
+                    <option value="pg25">PG 25%</option>
+                  </select>
+                </span>
+              </label>
+              <label class="field">
+                <span>體積流量</span>
+                <span class="input-wrap"><input id="liquidFlow" name="liquidFlow" type="number" value="10" min="0.01" step="0.1" inputmode="decimal" /><em>L/min</em></span>
+              </label>
+            </div>
+            <p class="field-note" id="fluidPropertyNote">物性以約 40°C 的水估算：ρ 993.1 kg/m³、Cp 4,178 J/kg·K</p>
+          </fieldset>
+
+          <details class="advanced">
+            <summary>
+              <span>進階假設</span>
+              <small>沿用範本預設值</small>
+            </summary>
+            <div class="advanced-grid">
+              <label class="field">
+                <span>有效風量係數</span>
+                <span class="input-wrap"><input id="airflowFactor" name="airflowFactor" type="number" value="90" min="10" max="120" step="1" inputmode="decimal" /><em>%</em></span>
+              </label>
+              <label class="field">
+                <span>鰭片效率</span>
+                <span class="input-wrap"><input id="finEfficiency" name="finEfficiency" type="number" value="90" min="10" max="100" step="1" inputmode="decimal" /><em>%</em></span>
+              </label>
+              <label class="field">
+                <span>UA 修正係數</span>
+                <span class="input-wrap"><input id="uaFactor" name="uaFactor" type="number" value="100" min="10" max="150" step="1" inputmode="decimal" /><em>%</em></span>
+              </label>
+            </div>
+          </details>
+
+          <p class="form-error" id="formError" role="alert" hidden></p>
+        </form>
+      </section>
+
+      <section class="results-column" aria-live="polite" aria-labelledby="resultTitle">
+        <article class="panel result-hero">
+          <div class="result-heading">
+            <div>
+              <p class="eyebrow">RESULT · AUTO UPDATE</p>
+              <h2 id="resultTitle">需求入口液溫</h2>
+            </div>
+            <span class="confidence-pill">概念估算</span>
+          </div>
+
+          <div class="hero-value-row">
+            <div class="hero-value">
+              <strong id="liquidInletValue">38.2</strong><span>°C</span>
+              <p>需高於空氣入口 <b id="approachValue">13.2°C</b></p>
+            </div>
+            <div class="uncertainty">
+              <span>UA ±25% 範圍</span>
+              <strong id="uncertaintyValue">36.1–41.9°C</strong>
+            </div>
+          </div>
+
+          <div class="flow-diagram" aria-label="熱交換器溫度與流向示意">
+            <div class="stream stream--liquid stream--in">
+              <span>液體入口</span><strong id="diagramLiquidIn">38.2°C</strong>
+            </div>
+            <div class="stream stream--air stream--out">
+              <span>空氣出口</span><strong id="diagramAirOut">33.9°C</strong>
+            </div>
+            <div class="core" aria-hidden="true">
+              <span class="core-line"></span><span class="core-line"></span><span class="core-line"></span><span class="core-line"></span><span class="core-line"></span>
+              <b id="corePower">900 W</b>
+            </div>
+            <div class="stream stream--liquid stream--out">
+              <span>液體出口</span><strong id="diagramLiquidOut">36.9°C</strong>
+            </div>
+            <div class="stream stream--air stream--in">
+              <span>空氣入口</span><strong id="diagramAirIn">25.0°C</strong>
+            </div>
+          </div>
+
+          <div class="metric-grid metric-grid--primary">
+            <div class="metric">
+              <span>空氣出口</span>
+              <strong id="airOutletValue">33.9°C</strong>
+              <small id="airRiseValue">升溫 8.9°C</small>
+            </div>
+            <div class="metric">
+              <span>液體出口</span>
+              <strong id="liquidOutletValue">36.9°C</strong>
+              <small id="liquidDropValue">降溫 1.3°C</small>
+            </div>
+            <div class="metric">
+              <span>LMTD</span>
+              <strong id="lmtdValue">6.9°C</strong>
+              <small>平行流等效</small>
+            </div>
+            <div class="metric">
+              <span>熱交換器效能 ε</span>
+              <strong id="effectivenessValue">67%</strong>
+              <small id="limitingSideValue">氣側限制</small>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel engineering-panel">
+          <div class="panel-heading panel-heading--compact">
+            <div>
+              <p class="eyebrow">ENGINEERING CHECK</p>
+              <h2>推導參數</h2>
+            </div>
+            <span class="model-tag">ε–NTU</span>
+          </div>
+
+          <div class="engineering-layout">
+            <div class="gauge-card">
+              <div class="gauge" id="effectivenessGauge" style="--gauge-value: 67">
+                <div><strong id="gaugeValue">67</strong><span>%</span></div>
+              </div>
+              <div>
+                <span>換熱效能</span>
+                <strong id="performanceLabel">良好</strong>
+                <small>在目前流量與估算 UA 下</small>
+              </div>
+            </div>
+
+            <dl class="derived-list">
+              <div><dt>總傳熱能力 UA</dt><dd><b id="uaValue">130.7</b> W/K</dd></div>
+              <div><dt>空氣側速度</dt><dd><b id="velocityValue">465</b> ft/min <small id="velocityMetricValue">2.36 m/s</small></dd></div>
+              <div><dt>有效鰭片面積</dt><dd><b id="areaValue">3.34</b> m²</dd></div>
+              <div><dt>氣側 h</dt><dd><b id="hValue">39.1</b> W/m²·K</dd></div>
+              <div><dt>NTU / 容量比 Cr</dt><dd><b id="ntuValue">1.29</b> / <b id="crValue">0.15</b></dd></div>
+              <div><dt>限制側熱容量率</dt><dd><b id="capacityRateValue">101</b> W/K</dd></div>
+            </dl>
+          </div>
+
+          <div class="checks" id="checks" aria-label="設計檢核"></div>
+        </article>
+
+      </section>
+    </main>
+
+    <section class="panel formula-reference" aria-labelledby="formulaTitle">
+      <div class="formula-heading">
+        <div>
+          <p class="eyebrow">CALCULATION NOTES</p>
+          <h2 id="formulaTitle">計算式與符號說明</h2>
+        </div>
+        <span class="model-tag">平行流 ε–NTU</span>
+      </div>
+      <p class="formula-intro">依序由氣側速度與有效鰭片面積建立 UA，再反算指定熱負載所需的液體入口溫度。式中所有長度代入計算前均轉為一致的 SI 單位。</p>
+
+      <div class="formula-grid">
+        <article class="formula-card">
+          <span class="formula-number">01</span>
+          <h3>空氣物性與出口溫度</h3>
+          <div class="equation">ρ<sub>a</sub> = 101325 ÷ [287.058 × (T<sub>a,m</sub> + 273.15)]</div>
+          <div class="equation">T<sub>a,out</sub> = T<sub>a,in</sub> + P ÷ (ρ<sub>a</sub> V̇<sub>a</sub> c<sub>p,a</sub>)</div>
+          <p>T<sub>a,m</sub> = (T<sub>a,in</sub> + T<sub>a,out</sub>)/2，程式迭代更新空氣密度；c<sub>p,a</sub> = 1006 J/kg·K。</p>
+        </article>
+
+        <article class="formula-card">
+          <span class="formula-number">02</span>
+          <h3>核心正面速度</h3>
+          <div class="equation">V<sub>face</sub> = η<sub>Q</sub> V̇<sub>a</sub> ÷ (L × W × σ)</div>
+          <p>η<sub>Q</sub> 為有效風量係數，σ 為核心開口率。氣側 h 的經驗式使用換算後的 ft/min。</p>
+        </article>
+
+        <article class="formula-card">
+          <span class="formula-number">03</span>
+          <h3>有效鰭片面積</h3>
+          <div class="equation">N<sub>f</sub> = FPI × L ÷ 25.4</div>
+          <div class="equation">A<sub>eff</sub> = 2 × N<sub>f</sub> × W × T × η<sub>f</sub></div>
+          <p>N<sub>f</sub> 為估算鰭片數，η<sub>f</sub> 為鰭片效率；W、T 在面積式中以 m 代入。</p>
+        </article>
+
+        <article class="formula-card">
+          <span class="formula-number">04</span>
+          <h3>氣側 h 與 UA</h3>
+          <div class="equation">h<sub>a</sub> = 0.2875 × V<sub>face,fpm</sub><sup>0.8</sup></div>
+          <div class="equation">UA = h<sub>a</sub> × A<sub>eff</sub> × F<sub>UA</sub></div>
+          <p>h<sub>a</sub> 單位為 W/m²·K。0.2875 為對照原範本結果採用的氣側經驗係數，F<sub>UA</sub> 可用實測校正。</p>
+        </article>
+
+        <article class="formula-card">
+          <span class="formula-number">05</span>
+          <h3>熱容量率與效能</h3>
+          <div class="equation">C<sub>a</sub> = ρ<sub>a</sub> V̇<sub>a</sub> c<sub>p,a</sub>　C<sub>l</sub> = ρ<sub>l</sub> V̇<sub>l</sub> c<sub>p,l</sub></div>
+          <div class="equation">NTU = UA ÷ C<sub>min</sub>　C<sub>r</sub> = C<sub>min</sub> ÷ C<sub>max</sub></div>
+          <div class="equation">ε = [1 − e<sup>−NTU(1+Cr)</sup>] ÷ (1 + C<sub>r</sub>)</div>
+          <p>C<sub>min</sub> 與 C<sub>max</sub> 分別取氣側、液側熱容量率的較小值與較大值。</p>
+        </article>
+
+        <article class="formula-card">
+          <span class="formula-number">06</span>
+          <h3>溫度與 LMTD</h3>
+          <div class="equation">T<sub>l,in</sub> = T<sub>a,in</sub> + P ÷ (ε C<sub>min</sub>)</div>
+          <div class="equation">T<sub>l,out</sub> = T<sub>l,in</sub> − P ÷ C<sub>l</sub></div>
+          <div class="equation">LMTD = (ΔT<sub>1</sub> − ΔT<sub>2</sub>) ÷ ln(ΔT<sub>1</sub>/ΔT<sub>2</sub>) = P ÷ UA</div>
+          <p>ΔT<sub>1</sub> = T<sub>l,in</sub> − T<sub>a,in</sub>；ΔT<sub>2</sub> = T<sub>l,out</sub> − T<sub>a,out</sub>。</p>
+        </article>
+      </div>
+
+      <div class="symbol-note">
+        <b>主要符號</b>
+        <span>P：熱負載 [W]</span>
+        <span>V̇：體積流量 [m³/s]</span>
+        <span>C：熱容量率 [W/K]</span>
+        <span>UA：總傳熱能力 [W/K]</span>
+        <span>ε：熱交換器效能 [–]</span>
+      </div>
+      <p class="limitation"><strong>適用範圍：</strong>尚未納入風扇 PQ 與核心壓降、風量旁通與不均、液側 h、管壁／接觸／污垢熱阻，以及實際鰭片與流道幾何。結果適合概念比較；定案時建議以供應商性能曲線、實測或 CFD 校正 F<sub>UA</sub>。</p>
+    </section>
+
+    <footer>
+      <span>所有計算均在本機完成</span>
+      <span id="calculationTimestamp">已套用範例參數</span>
+    </footer>
+
+    <dialog id="installDialog" class="install-dialog">
+      <button class="dialog-close" id="closeInstallDialog" type="button" aria-label="關閉">×</button>
+      <div class="dialog-icon" aria-hidden="true">
+        <svg viewBox="0 0 40 40"><path d="M8 10h9v20H8zM23 10h9v20h-9zM4 15h7M4 25h7M29 15h7M29 25h7M17 14h6M17 20h6M17 26h6" /></svg>
+      </div>
+      <h2>安裝到主畫面</h2>
+      <p id="installHelp">在瀏覽器選單中選擇「加到主畫面」，即可像 App 一樣離線開啟。</p>
+      <button class="button button--primary" id="dialogInstallButton" type="button">安裝</button>
+    </dialog>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
