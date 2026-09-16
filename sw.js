@@ -1,13 +1,13 @@
-const CACHE_NAME = "hx-quick-estimate-v4";
+const CACHE_NAME = "hx-quick-estimate-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
-  "./hx-favicon-v4.png",
-  "./hx-icon-v4-192.png",
-  "./hx-icon-v4-512.png"
+  "./hx-favicon-v5.png",
+  "./hx-icon-v5-192.png",
+  "./hx-icon-v5-512.png"
 ];
 
 self.addEventListener("install", (event) => {
