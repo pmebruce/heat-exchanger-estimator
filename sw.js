@@ -1,4 +1,4 @@
-const CACHE_NAME = "hx-quick-estimate-v5-type2";
+const CACHE_NAME = "hx-quick-estimate-v5-type2-hero1";
 const APP_SHELL = [
   "./",
   "./index.html",
