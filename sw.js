@@ -1,9 +1,9 @@
-const CACHE_NAME = "hx-quick-estimate-v5-type2-hero2";
+const CACHE_NAME = "hx-quick-estimate-v6-ht-ntu";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
-  "./app.js",
+  "./app.js", "./ht-ntu.js", "./licenses/ht-MIT.txt",
   "./manifest.webmanifest",
   "./hx-favicon-v5.png",
   "./hx-icon-v5-192.png",

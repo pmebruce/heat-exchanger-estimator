@@ -1,3 +1,4 @@
+import {effectiveness as htEffectiveness, FLOW_TYPES, rating, requiredUA} from './ht-ntu.js';
 const FLUIDS = {
   water: { label: "水", rho: 993.1, cp: 4178 },
   eg50: { label: "EG 50%", rho: 1064, cp: 3330 },
@@ -22,7 +23,7 @@ const outputIds = [
 const output = Object.fromEntries(outputIds.map((id) => [id, document.getElementById(id)]));
 
 function numberValue(id) {
-  return Number(document.getElementById(id).value);
+  const raw=document.getElementById(id).value;return raw.trim()?Number(raw):NaN;
 }
 
 function setText(key, value) {
@@ -38,29 +39,27 @@ function airDensity(tempC) {
 }
 
 function solveAirOutlet(heatW, inletC, flowM3s) {
-  let outletC = inletC + heatW / (airDensity(inletC) * flowM3s * AIR_CP);
-  for (let i = 0; i < 5; i += 1) {
-    const meanC = (inletC + outletC) / 2;
-    outletC = inletC + heatW / (airDensity(meanC) * flowM3s * AIR_CP);
-  }
-  const capacityRate = heatW / (outletC - inletC);
-  return { outletC, capacityRate, rho: capacityRate / (flowM3s * AIR_CP) };
+  // CFM is actual inlet volume flow. Mass flow remains constant across the core.
+  const rho=airDensity(inletC),capacityRate=rho*flowM3s*AIR_CP;
+  return {outletC:inletC+heatW/capacityRate,capacityRate,rho};
 }
 
-function parallelEffectiveness(ua, cMin, cMax) {
+function flowEffectiveness(ua, cMin, cMax) {
   const cr = cMin / cMax;
   const ntu = ua / cMin;
-  const effectiveness = (1 - Math.exp(-ntu * (1 + cr))) / (1 + cr);
+  const effectiveness = htEffectiveness(ntu,cr,document.getElementById("flowType").value);
   return { effectiveness, ntu, cr };
 }
 
 function requiredHotInlet(heatW, coldInletC, ua, cMin, cMax) {
-  const { effectiveness } = parallelEffectiveness(ua, cMin, cMax);
+  const { effectiveness } = flowEffectiveness(ua, cMin, cMax);
   return coldInletC + heatW / (effectiveness * cMin);
 }
 
 function validate(values) {
   const rules = [
+    [values.knownUA>0,'已知 UA 必須大於 0 W/K。'],
+    [Object.hasOwn(FLOW_TYPES,values.flowType),'請選擇有效流向。'],
     [values.power > 0, "熱負載必須大於 0 W。"],
     [values.airflow > 0, "風量必須大於 0 CFM。"],
     [values.openingRatio >= 0.05 && values.openingRatio <= 1, "核心開口率需介於 0.05 與 1。"],
@@ -121,6 +120,7 @@ function calculate() {
     airflowFactor: numberValue("airflowFactor") / 100,
     finEfficiency: numberValue("finEfficiency") / 100,
     uaFactor: numberValue("uaFactor") / 100,
+    uaMode:document.getElementById("uaMode").value,knownUA:numberValue("knownUA"),knownHot:numberValue("knownHot"),flowType:document.getElementById("flowType").value,
     fluid: document.getElementById("fluid").value
   };
 
@@ -139,7 +139,7 @@ function calculate() {
   formError.hidden = true;
 
   const fluid = FLUIDS[values.fluid];
-  const airFlowM3s = values.airflow * CFM_TO_M3_S;
+  const airFlowM3s = values.airflow * values.airflowFactor * CFM_TO_M3_S;
   const air = solveAirOutlet(values.power, values.airInlet, airFlowM3s);
   const liquidCapacityRate = fluid.rho * (values.liquidFlow / 60000) * fluid.cp;
 
@@ -151,11 +151,11 @@ function calculate() {
   const grossFinAreaM2 = 2 * finCount * (values.width / 1000) * (values.thickness / 1000);
   const effectiveAreaM2 = grossFinAreaM2 * values.finEfficiency;
   const hAir = 0.2875 * Math.pow(velocityFpm, 0.8);
-  const ua = hAir * effectiveAreaM2 * values.uaFactor;
+  const ua = values.uaMode==='manual'?values.knownUA:hAir * effectiveAreaM2 * values.uaFactor;
 
   const cMin = Math.min(air.capacityRate, liquidCapacityRate);
   const cMax = Math.max(air.capacityRate, liquidCapacityRate);
-  const { effectiveness, ntu, cr } = parallelEffectiveness(ua, cMin, cMax);
+  const { effectiveness, ntu, cr } = flowEffectiveness(ua, cMin, cMax);
 
   const liquidInlet = values.airInlet + values.power / (effectiveness * cMin);
   const liquidDrop = values.power / liquidCapacityRate;
@@ -203,7 +203,19 @@ function calculate() {
 
   renderChecks({ velocityFpm, airRise, fpi: values.fpi, openingRatio: values.openingRatio });
 
-  window.__hxResult = {
+  const ratingOK=values.knownHot>values.airInlet;
+  const comparisons=Object.entries(FLOW_TYPES).map(([id,label])=>{
+    const eps=htEffectiveness(ntu,cr,id),required=values.airInlet+values.power/(eps*cMin);
+    const rated=ratingOK?rating(ua,liquidCapacityRate,air.capacityRate,values.knownHot,values.airInlet,id):null;
+    return {id,label,epsilon:eps,required,rated};
+  });
+  const chosen=comparisons.find(row=>row.id===values.flowType);
+  const need=ratingOK?requiredUA(values.power,values.knownHot-values.airInlet,cMin,cMax,values.flowType):null;
+  document.getElementById('flowComparison').innerHTML=comparisons.map(row=>`<article class="flow-compare-card ${row.id===values.flowType?'selected':''}"><h3>${row.label}${row.id===values.flowType?' · 目前':''}</h3><dl><div><dt>效能 ε</dt><dd>${fixed(row.epsilon*100,1)}%</dd></div><div><dt>負載所需入口液溫</dt><dd>${fixed(row.required,2)} °C</dd></div><div><dt>已知入口溫度可帶走熱量</dt><dd>${row.rated?fixed(row.rated.q,1)+' W':'需液體入口高於氣溫'}</dd></div></dl></article>`).join('');
+  document.getElementById('knownRating').textContent=chosen.rated?`液體入口 ${values.knownHot} °C，可帶走 ${fixed(chosen.rated.q,1)} W；液體出口 ${fixed(chosen.rated.hotOut,2)} °C、空氣出口 ${fixed(chosen.rated.coldOut,2)} °C。達成 ${values.power} W 所需 UA：${need===null?'此流向在此溫差下無法達成':fixed(need,2)+' W/K'}。`:'請將驗算用液體入口溫度設為高於空氣入口溫度。';
+  document.getElementById('flowModelLabel').textContent=FLOW_TYPES[values.flowType]+' ε–NTU';
+  window.__hxResult = {comparisons,requiredUA:need,selectedRating:chosen.rated,
+
     inputs: values,
     results: {
       requiredLiquidInletC: liquidInlet,
@@ -360,3 +372,9 @@ function registerWebMcpTool() {
 }
 
 registerWebMcpTool();
+
+document.getElementById('exportHx').addEventListener('click',()=>{
+ const r=window.__hxResult;if(!formError.hidden||!r)return;
+ const rows=[['流向','效能','負載所需入口液溫_C','驗算可帶走熱量_W','驗算液體出口_C','驗算空氣出口_C'],...r.comparisons.map(c=>[c.label,c.epsilon,c.required,c.rated?.q??'',c.rated?.hotOut??'',c.rated?.coldOut??''])];
+ const blob=new Blob(['\uFEFF'+rows.map(row=>row.join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='hx-flow-comparison.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});

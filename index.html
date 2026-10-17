@@ -109,7 +109,7 @@ header.tool-hero h1{font-size:25px!important}
                 <span class="input-wrap"><input id="power" name="power" type="number" value="900" min="1" step="10" inputmode="decimal" /><em>W</em></span>
               </label>
               <label class="field">
-                <span>風扇風量 <b>Q</b></span>
+                <span>入口實際體積風量 <b>Q</b></span>
                 <span class="input-wrap"><input id="airflow" name="airflow" type="number" value="180" min="0.1" step="1" inputmode="decimal" /><em>CFM</em></span>
               </label>
               <label class="field">
@@ -147,6 +147,7 @@ header.tool-hero h1{font-size:25px!important}
             </label>
           </fieldset>
 
+          <fieldset><legend>熱交換器流向與 UA</legend><label class="field field--full"><span>流向模型</span><span class="select-wrap"><select id="flowType"><option value="parallel">並流（原模式）</option><option value="counterflow">逆流</option><option value="crossflow approximate">交叉流・雙側不混合（近似）</option><option value="crossflow, mixed Cmin">交叉流・Cmin 側混合</option><option value="crossflow, mixed Cmax">交叉流・Cmax 側混合</option></select></span></label><label class="field field--full"><span>UA 來源</span><span class="select-wrap"><select id="uaMode"><option value="geometry">核心幾何初估</option><option value="manual">輸入實測／供應商 UA</option></select></span></label><div class="field-grid field-grid--two"><label class="field"><span>已知 UA（選手動時使用）</span><span class="input-wrap"><input id="knownUA" type="number" min="0.001" value="130" step="any"><em>W/K</em></span></label><label class="field"><span>驗算用液體入口溫度</span><span class="input-wrap"><input id="knownHot" type="number" value="40" step="any"><em>°C</em></span></label></div></fieldset>
           <fieldset>
             <legend>液側</legend>
             <div class="field-grid field-grid--two">
@@ -245,7 +246,7 @@ header.tool-hero h1{font-size:25px!important}
               <small id="liquidDropValue">降溫 1.3°C</small>
             </div>
             <div class="metric">
-              <span>LMTD</span>
+              <span>有效平均溫差 Q/UA</span>
               <strong id="lmtdValue">6.9°C</strong>
               <small>平行流等效</small>
             </div>
@@ -300,7 +301,7 @@ header.tool-hero h1{font-size:25px!important}
           <p class="eyebrow">CALCULATION NOTES</p>
           <h2 id="formulaTitle">計算式與符號說明</h2>
         </div>
-        <span class="model-tag">平行流 ε–NTU</span>
+        <span class="model-tag" id="flowModelLabel">並流 ε–NTU</span>
       </div>
       <p class="formula-intro">依序由氣側速度與有效鰭片面積建立 UA，再反算指定熱負載所需的液體入口溫度。式中所有長度代入計算前均轉為一致的 SI 單位。</p>
 
@@ -341,17 +342,17 @@ header.tool-hero h1{font-size:25px!important}
           <h3>熱容量率與效能</h3>
           <div class="equation">C<sub>a</sub> = ρ<sub>a</sub> V̇<sub>a</sub> c<sub>p,a</sub>　C<sub>l</sub> = ρ<sub>l</sub> V̇<sub>l</sub> c<sub>p,l</sub></div>
           <div class="equation">NTU = UA ÷ C<sub>min</sub>　C<sub>r</sub> = C<sub>min</sub> ÷ C<sub>max</sub></div>
-          <div class="equation">ε = [1 − e<sup>−NTU(1+Cr)</sup>] ÷ (1 + C<sub>r</sub>)</div>
+          <div class="equation">並流示例：ε = [1 − e<sup>−NTU(1+Cr)</sup>] ÷ (1 + C<sub>r</sub>)</div>
           <p>C<sub>min</sub> 與 C<sub>max</sub> 分別取氣側、液側熱容量率的較小值與較大值。</p>
         </article>
 
         <article class="formula-card">
           <span class="formula-number">06</span>
-          <h3>溫度與 LMTD</h3>
+          <h3>溫度與有效平均溫差</h3>
           <div class="equation">T<sub>l,in</sub> = T<sub>a,in</sub> + P ÷ (ε C<sub>min</sub>)</div>
           <div class="equation">T<sub>l,out</sub> = T<sub>l,in</sub> − P ÷ C<sub>l</sub></div>
-          <div class="equation">LMTD = (ΔT<sub>1</sub> − ΔT<sub>2</sub>) ÷ ln(ΔT<sub>1</sub>/ΔT<sub>2</sub>) = P ÷ UA</div>
-          <p>ΔT<sub>1</sub> = T<sub>l,in</sub> − T<sub>a,in</sub>；ΔT<sub>2</sub> = T<sub>l,out</sub> − T<sub>a,out</sub>。</p>
+          <div class="equation">有效平均溫差 = P ÷ UA；並流／逆流可用相應端點計算 LMTD</div>
+          <p>上式 ε 是並流示例，實際依所選流向計算。交叉流 Q/UA 已包含流向影響，不能當成未修正的端點 LMTD。</p>
         </article>
       </div>
 
@@ -366,7 +367,7 @@ header.tool-hero h1{font-size:25px!important}
       <p class="limitation"><strong>適用範圍：</strong>尚未納入風扇 PQ 與核心壓降、風量旁通與不均、液側 h、管壁／接觸／污垢熱阻，以及實際鰭片與流道幾何。結果適合概念比較；定案時建議以供應商性能曲線、實測或 CFD 校正 F<sub>UA</sub>。</p>
     </section>
 
-    <footer>
+    <section class="panel hx-flow-panel"><div class="panel-heading"><h2>流向比較與已知入口溫度驗算</h2><button id="exportHx" type="button" class="text-button">匯出比較 CSV</button></div><p>相同 UA 與兩側流量下比較五種流向。Cmin／Cmax 依熱容量率判斷，並非固定指空氣側或液體側。</p><p id="knownRating" role="status"></p><div id="flowComparison"></div><p>ε–NTU 關係式移植自 <a href="https://github.com/CalebBell/ht" target="_blank" rel="noopener">ht 1.2.0</a>。交叉流雙側不混合採近似式；其他四式依模型解析關係。<a href="./licenses/ht-MIT.txt">MIT 授權</a></p><p>氣側質量流率以入口溫度與實際進入核心的風量計算，包含有效風量係數。Q/UA 為有效平均溫差；交叉流不可直接當成未修正的 LMTD。幾何 UA 仍屬簡化估算，實測 UA 優先。</p></section><footer>
       <span>所有計算均在本機完成</span>
       <span id="calculationTimestamp">已套用範例參數</span>
     </footer>
@@ -381,6 +382,6 @@ header.tool-hero h1{font-size:25px!important}
       <button class="button button--primary" id="dialogInstallButton" type="button">安裝</button>
     </dialog>
 
-    <script src="./app.js" defer></script>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>
