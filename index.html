@@ -11,7 +11,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./hx-favicon-v5.png" type="image/png" />
     <link rel="apple-touch-icon" href="./hx-icon-v5-192.png" />
-    <link rel="stylesheet" href="./styles.css?v=6" />
+    <link rel="stylesheet" href="./styles.css?v=7" />
     <title>熱交換器快速估算</title>
   <style id="toolbox-typography-v2">
 /* Toolbox typography v2: original tools 11/12 reading scale, compact calculation notes. */
@@ -147,7 +147,7 @@ header.tool-hero h1{font-size:25px!important}
             </label>
           </fieldset>
 
-          <fieldset><legend>熱交換器流向與 UA</legend><label class="field field--full"><span>流向模型</span><span class="select-wrap"><select id="flowType"><option value="parallel">並流（原模式）</option><option value="counterflow">逆流</option><option value="crossflow approximate">交叉流・雙側不混合（近似）</option><option value="crossflow, mixed Cmin">交叉流・Cmin 側混合</option><option value="crossflow, mixed Cmax">交叉流・Cmax 側混合</option></select></span></label><label class="field field--full"><span>UA 來源</span><span class="select-wrap"><select id="uaMode"><option value="geometry">核心幾何初估</option><option value="manual">輸入實測／供應商 UA</option></select></span></label><div class="field-grid field-grid--two"><label class="field"><span>已知 UA（選手動時使用）</span><span class="input-wrap"><input id="knownUA" type="number" min="0.001" value="130" step="any"><em>W/K</em></span></label><label class="field"><span>驗算用液體入口溫度</span><span class="input-wrap"><input id="knownHot" type="number" value="40" step="any"><em>°C</em></span></label></div></fieldset>
+          <fieldset><legend>熱交換器流向與 UA</legend><label class="field field--full"><span>流向模型</span><span class="select-wrap"><select id="flowType"><option value="parallel">並流（原模式）</option><option value="counterflow">逆流</option><option value="crossflow approximate">交叉流・雙側不混合（近似）</option><option value="crossflow, mixed Cmin">交叉流・Cmin 側混合</option><option value="crossflow, mixed Cmax">交叉流・Cmax 側混合</option></select></span></label><div id="flowDiagram" class="flow-diagram-active" aria-live="polite"></div><label class="field field--full"><span>UA 來源</span><span class="select-wrap"><select id="uaMode"><option value="geometry">核心幾何初估</option><option value="manual">輸入實測／供應商 UA</option></select></span></label><div class="field-grid field-grid--two"><label class="field"><span>已知 UA（選手動時使用）</span><span class="input-wrap"><input id="knownUA" type="number" min="0.001" value="130" step="any"><em>W/K</em></span></label><label class="field"><span>驗算用液體入口溫度</span><span class="input-wrap"><input id="knownHot" type="number" value="40" step="any"><em>°C</em></span></label></div></fieldset>
           <fieldset>
             <legend>液側</legend>
             <div class="field-grid field-grid--two">
@@ -382,6 +382,6 @@ header.tool-hero h1{font-size:25px!important}
       <button class="button button--primary" id="dialogInstallButton" type="button">安裝</button>
     </dialog>
 
-    <script type="module" src="./app.js?v=6"></script>
+    <script type="module" src="./app.js?v=7"></script>
   </body>
 </html>

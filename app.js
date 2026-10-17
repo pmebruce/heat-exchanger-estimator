@@ -1,3 +1,4 @@
+import {flowDiagram} from './flow-diagram.js';
 import {effectiveness as htEffectiveness, FLOW_TYPES, rating, requiredUA} from './ht-ntu.js';
 const FLUIDS = {
   water: { label: "水", rho: 993.1, cp: 4178 },
@@ -107,6 +108,7 @@ function renderChecks({ velocityFpm, airRise, fpi, openingRatio }) {
 }
 
 function calculate() {
+  document.getElementById("flowDiagram").innerHTML=flowDiagram(document.getElementById("flowType").value);
   const values = {
     power: numberValue("power"),
     airflow: numberValue("airflow"),
@@ -155,6 +157,7 @@ function calculate() {
 
   const cMin = Math.min(air.capacityRate, liquidCapacityRate);
   const cMax = Math.max(air.capacityRate, liquidCapacityRate);
+  document.getElementById("flowDiagram").innerHTML=flowDiagram(values.flowType,{airCapacity:air.capacityRate,liquidCapacity:liquidCapacityRate});
   const { effectiveness, ntu, cr } = flowEffectiveness(ua, cMin, cMax);
 
   const liquidInlet = values.airInlet + values.power / (effectiveness * cMin);
@@ -211,7 +214,7 @@ function calculate() {
   });
   const chosen=comparisons.find(row=>row.id===values.flowType);
   const need=ratingOK?requiredUA(values.power,values.knownHot-values.airInlet,cMin,cMax,values.flowType):null;
-  document.getElementById('flowComparison').innerHTML=comparisons.map(row=>`<article class="flow-compare-card ${row.id===values.flowType?'selected':''}"><h3>${row.label}${row.id===values.flowType?' · 目前':''}</h3><dl><div><dt>效能 ε</dt><dd>${fixed(row.epsilon*100,1)}%</dd></div><div><dt>負載所需入口液溫</dt><dd>${fixed(row.required,2)} °C</dd></div><div><dt>已知入口溫度可帶走熱量</dt><dd>${row.rated?fixed(row.rated.q,1)+' W':'需液體入口高於氣溫'}</dd></div></dl></article>`).join('');
+  document.getElementById('flowComparison').innerHTML=comparisons.map(row=>`<article class="flow-compare-card ${row.id===values.flowType?'selected':''}"><h3>${row.label}${row.id===values.flowType?' · 目前':''}</h3>${flowDiagram(row.id,{airCapacity:air.capacityRate,liquidCapacity:liquidCapacityRate,compact:true})}<dl><div><dt>效能 ε</dt><dd>${fixed(row.epsilon*100,1)}%</dd></div><div><dt>負載所需入口液溫</dt><dd>${fixed(row.required,2)} °C</dd></div><div><dt>已知入口溫度可帶走熱量</dt><dd>${row.rated?fixed(row.rated.q,1)+' W':'需液體入口高於氣溫'}</dd></div></dl></article>`).join('');
   document.getElementById('knownRating').textContent=chosen.rated?`液體入口 ${values.knownHot} °C，可帶走 ${fixed(chosen.rated.q,1)} W；液體出口 ${fixed(chosen.rated.hotOut,2)} °C、空氣出口 ${fixed(chosen.rated.coldOut,2)} °C。達成 ${values.power} W 所需 UA：${need===null?'此流向在此溫差下無法達成':fixed(need,2)+' W/K'}。`:'請將驗算用液體入口溫度設為高於空氣入口溫度。';
   document.getElementById('flowModelLabel').textContent=FLOW_TYPES[values.flowType]+' ε–NTU';
   window.__hxResult = {comparisons,requiredUA:need,selectedRating:chosen.rated,
